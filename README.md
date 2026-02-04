@@ -19,5 +19,5 @@ A browser-based tool to calculate optimal power output for cycling courses based
 
 ## Try It
 
-Visit: [NickLeenders.github.io/cycling-power-optimizer](https://YOUR_GITHUB_USERNAME.github.io/cycling-power-optimizer)
+Visit: [NickLeenders.github.io/cycling-power-optimizer](https://nickleenders.github.io/cycling-power-optimizer/)
 
