@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cycling Power Optimizer</title>
+    <meta name="description"
+        content="Optimize your cycling power output based on route terrain, wind conditions, and FTP to maximize speed while managing fatigue.">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="5.5" cy="17.5" r="3.5" />
+                    <circle cx="18.5" cy="17.5" r="3.5" />
+                    <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2" />
+                </svg>
+                <h1>Power Optimizer</h1>
+                <button class="info-btn" id="infoBtn" title="How it works">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 16v-4m0-4h.01" />
+                    </svg>
+                </button>
+            </div>
+            <p class="tagline">Optimize your cycling power for maximum speed</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel - Controls -->
+            <aside class="control-panel">
+                <div class="card">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        Route
+                    </h2>
+                    <div class="file-upload" id="fileUpload">
+                        <input type="file" id="gpxInput" accept=".gpx" hidden>
+                        <label for="gpxInput" class="upload-label">
+                            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            <span>Drop GPX file or click to upload</span>
+                        </label>
+                    </div>
+                    <div class="route-info" id="routeInfo">
+                        <div class="info-item">
+                            <span class="info-label">Distance</span>
+                            <span class="info-value" id="totalDistance">--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Elevation Gain</span>
+                            <span class="info-value" id="elevationGain">--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Max Gradient</span>
+                            <span class="info-value" id="maxGradient">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        Rider Profile
+                    </h2>
+                    <div class="input-group">
+                        <label for="ftp">FTP (Functional Threshold Power)</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="ftp" value="250" min="100" max="500" step="5">
+                            <span class="unit">W</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="riderWeight">Rider Weight</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="riderWeight" value="75" min="40" max="150" step="1">
+                            <span class="unit">kg</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="bikeWeight">Bike Weight</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="bikeWeight" value="8" min="5" max="20" step="0.5">
+                            <span class="unit">kg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card ride-mode-card">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path
+                                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                        Ride Mode
+                    </h2>
+                    <div class="ride-mode-options" id="rideModeOptions">
+                        <button class="ride-mode-btn active" data-mode="race">
+                            <span class="mode-icon">🏁</span>
+                            <span class="mode-name">Race</span>
+                            <span class="mode-desc">All-out effort</span>
+                        </button>
+                        <button class="ride-mode-btn" data-mode="touring">
+                            <span class="mode-icon">🍺</span>
+                            <span class="mode-name">Touring</span>
+                            <span class="mode-desc">Ride tomorrow too</span>
+                        </button>
+                        <button class="ride-mode-btn" data-mode="tri703">
+                            <span class="mode-icon">🏃</span>
+                            <span class="mode-name">70.3</span>
+                            <span class="mode-desc">21km run after</span>
+                        </button>
+                        <button class="ride-mode-btn" data-mode="triFull">
+                            <span class="mode-icon">🏃‍♂️</span>
+                            <span class="mode-name">Ironman</span>
+                            <span class="mode-desc">42km run after</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                        </svg>
+                        Target Intensity
+                    </h2>
+                    <div class="intensity-info">
+                        <p class="intensity-note">FTP is sustainable for ~1 hour. For longer rides, target a lower
+                            percentage.</p>
+                    </div>
+                    <div class="input-group">
+                        <label for="targetIntensity">Target Power (% of FTP)</label>
+                        <div class="intensity-slider-container">
+                            <input type="range" id="targetIntensity" value="85" min="60" max="100" step="1">
+                            <span class="intensity-value" id="intensityValue">85%</span>
+                        </div>
+                        <div class="intensity-labels">
+                            <span>60% (5h+)</span>
+                            <span>100% (1h)</span>
+                        </div>
+                    </div>
+                    <button class="auto-recommend-btn" id="autoRecommendBtn">
+                        <svg class="btn-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path
+                                d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+                        </svg>
+                        Auto-Recommend for Route
+                    </button>
+                    <div class="recommended-info" id="recommendedInfo" style="display: none;">
+                        <span class="recommended-label">Recommended:</span>
+                        <span class="recommended-value" id="recommendedValue">--</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path
+                                d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2" />
+                        </svg>
+                        Wind Conditions
+                    </h2>
+                    <div class="input-group">
+                        <label for="windSpeed">Wind Speed</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="windSpeed" value="0" min="0" max="50" step="1">
+                            <span class="unit">km/h</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="windDirection">Wind Direction (from)</label>
+                        <div class="wind-direction-container">
+                            <input type="range" id="windDirection" value="0" min="0" max="359" step="1">
+                            <div class="wind-compass">
+                                <div class="compass-arrow" id="compassArrow"></div>
+                                <span class="compass-label">N</span>
+                            </div>
+                            <span class="wind-degrees" id="windDegrees">0°</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3" />
+                            <path d="M12 1v6m0 6v10M1 12h6m6 0h10" />
+                        </svg>
+                        Advanced Settings
+                    </h2>
+                    <div class="input-group">
+                        <label for="cda">CdA (Drag Coefficient × Area)</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="cda" value="0.32" min="0.2" max="0.5" step="0.01">
+                            <span class="unit">m²</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="crr">Rolling Resistance (Crr)</label>
+                        <input type="number" id="crr" value="0.005" min="0.002" max="0.01" step="0.001">
+                    </div>
+                    <div class="input-group">
+                        <label for="wprime">W' (Anaerobic Capacity)</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="wprime" value="20000" min="10000" max="30000" step="1000">
+                            <span class="unit">J</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="calculate-btn" id="calculateBtn">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                    Calculate Optimal Power
+                </button>
+            </aside>
+
+            <!-- Right Panel - Visualizations -->
+            <section class="visualization-panel">
+                <!-- Map -->
+                <div class="card map-card">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                            <line x1="8" y1="2" x2="8" y2="18" />
+                            <line x1="16" y1="6" x2="16" y2="22" />
+                        </svg>
+                        Route Map
+                    </h2>
+                    <div id="map" class="map-container"></div>
+                    <div class="map-legend">
+                        <div class="legend-item"><span class="legend-color recovery"></span> Recovery (&lt;75% FTP)
+                        </div>
+                        <div class="legend-item"><span class="legend-color endurance"></span> Endurance (75-90% FTP)
+                        </div>
+                        <div class="legend-item"><span class="legend-color tempo"></span> Tempo (90-105% FTP)</div>
+                        <div class="legend-item"><span class="legend-color threshold"></span> Threshold (105-120% FTP)
+                        </div>
+                        <div class="legend-item"><span class="legend-color vo2max"></span> VO2max (&gt;120% FTP)</div>
+                    </div>
+                </div>
+
+                <!-- Elevation Profile -->
+                <div class="card chart-card">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        </svg>
+                        Elevation & Power Profile
+                    </h2>
+                    <div class="chart-container">
+                        <canvas id="profileChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Results Summary -->
+                <div class="card results-card" id="resultsCard">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                        Optimization Results
+                    </h2>
+                    <div class="results-grid">
+                        <div class="result-item">
+                            <span class="result-value" id="estTime">--:--</span>
+                            <span class="result-label">Estimated Time</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-value" id="avgPower">--</span>
+                            <span class="result-label">Avg Power (W)</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-value" id="normPower">--</span>
+                            <span class="result-label">Normalized Power (W)</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-value" id="intensityFactor">--</span>
+                            <span class="result-label">Intensity Factor</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-value" id="tss">--</span>
+                            <span class="result-label">TSS</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-value" id="avgSpeed">--</span>
+                            <span class="result-label">Avg Speed (km/h)</span>
+                        </div>
+                    </div>
+                    <div class="wprime-gauge">
+                        <label>W' Balance (minimum during ride): <strong id="wprimePercent">--%</strong></label>
+                        <div class="gauge-bar">
+                            <div class="gauge-fill" id="wprimeGauge"></div>
+                        </div>
+                        <div class="gauge-labels">
+                            <span>0%</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+        </footer>
+    </div>
+
+    <!-- Info Modal -->
+    <div class="modal-overlay" id="infoModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">&times;</button>
+            <h2>How It Works</h2>
+
+            <section class="info-section">
+                <h3>Physics Model</h3>
+                <p>Total power required to maintain speed <em>v</em>:</p>
+                <div class="formula">
+                    P<sub>total</sub> = (P<sub>aero</sub> + P<sub>gravity</sub> + P<sub>rolling</sub>) / (1 - ε)
+                </div>
+                <div class="formula-breakdown">
+                    <div><strong>Aerodynamic drag:</strong> P<sub>aero</sub> = ½ρ × CdA × (v + v<sub>wind</sub>)² × v
+                    </div>
+                    <div><strong>Gravity:</strong> P<sub>gravity</sub> = m × g × sin(θ) × v</div>
+                    <div><strong>Rolling resistance:</strong> P<sub>rolling</sub> = C<sub>rr</sub> × m × g × cos(θ) × v
+                    </div>
+                    <div><strong>Drivetrain loss:</strong> ε = 2.5%</div>
+                </div>
+                <p class="constants">Constants: ρ = 1.225 kg/m³, g = 9.81 m/s²</p>
+            </section>
+
+            <section class="info-section">
+                <h3>W' Balance Model</h3>
+                <p>Tracks your anaerobic work capacity (W') to prevent "blowing up":</p>
+                <div class="formula-breakdown">
+                    <div><strong>Above FTP:</strong> W'<sub>balance</sub> decreases by (P - FTP) × time</div>
+                    <div><strong>Below FTP:</strong> W'<sub>balance</sub> recovers exponentially</div>
+                </div>
+                <p>Typical W' = 15-25 kJ. When depleted, you cannot sustain power above FTP.</p>
+            </section>
+
+            <section class="info-section">
+                <h3>Optimization Strategy</h3>
+                <p>The algorithm maximizes speed while respecting physiological limits:</p>
+                <ol>
+                    <li><strong>Duration-based intensity:</strong> Uses power-duration curve to set sustainable target
+                        (e.g., 81% FTP for 2.5h)</li>
+                    <li><strong>Gradient optimization:</strong> Push harder uphill (+5% per 1% grade) where watts save
+                        more time; ease off downhill to recover W'</li>
+                    <li><strong>Wind compensation:</strong> Slight power boost into headwind, reduction with tailwind
+                    </li>
+                    <li><strong>W' management:</strong> Caps power to preserve anaerobic reserve for later climbs</li>
+                </ol>
+            </section>
+
+            <section class="info-section">
+                <h3>Output Metrics</h3>
+                <div class="formula-breakdown">
+                    <div><strong>NP:</strong> 30-second rolling average raised to 4th power, then root</div>
+                    <div><strong>IF:</strong> Normalized Power / FTP</div>
+                    <div><strong>TSS:</strong> (duration × NP × IF) / (FTP × 3600) × 100</div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>Calculating optimal power...</p>
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- App Script -->
+    <script src="app.js"></script>
+</body>
+
+</html>
