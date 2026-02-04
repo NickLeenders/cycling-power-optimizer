@@ -19,7 +19,7 @@ A browser-based tool to calculate optimal power output for cycling courses based
 
 ## Try It
 
-Visit: [YOUR_GITHUB_USERNAME.github.io/cycling-optimizer](https://YOUR_GITHUB_USERNAME.github.io/cycling-optimizer)
+Visit: [YOUR_GITHUB_USERNAME.github.io/cycling-power-optimizer](https://YOUR_GITHUB_USERNAME.github.io/cycling-power-optimizer)
 
 ## License
 
